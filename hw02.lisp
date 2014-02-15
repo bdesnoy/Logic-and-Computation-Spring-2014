@@ -1021,7 +1021,8 @@ because (booleanp 1) returns nil.
 
 (check= (elem 2 '(1 2 3 4)) t)
 (check= (elem 2 '(1 3 3 4)) nil)
-(check= (elem 5 ()) nil)
+(check= (elem 5 ()) nil)#|ACL2s-ToDo-Line|#
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
