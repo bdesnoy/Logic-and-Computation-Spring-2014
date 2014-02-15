@@ -709,14 +709,30 @@ Tom takes the advanced course in Logic only if CS2800 is interesting. Tom
 gets a good grade in CS2800 and Tom takes the advanced course in Logic.
 Therefore, CS 2800 is interesting.
 
-...
+A = Tom takes the advanced course in Logic
+I = CS2800 is interesting
+G = Tom gets a good grade in CS2800
+
+(A => I) /\ G /\ A => I
+= {implies rule}
+(~A \/ I) /\ G /\ A => I
+= {absorbtion}
+I /\ G /\ A => I
+F /\ X /\ X => F   (set I to false)
+          F => F
+VALID
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Being rich is not the same thing as being happy. However, if I'm rich, I am
 also happy. Therefore, I am not rich but happy.
 
-...
+R = being rick
+H = being happy
+
+((R <> H) /\ (R => H)) => (~R /\ H)
+= {implies rule}
+((R <> H) /\ (~R \/ H)) => (~R /\ H)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
