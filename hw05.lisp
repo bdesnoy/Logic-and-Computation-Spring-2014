@@ -885,34 +885,48 @@ For example:
 (defunc prefix (l n)
   :input-contract (and (listp l) (natp n))
   :output-contract (listp (prefix l n))
-  ...
-
-)
+  (cond ((or (equal n 0) (endp l)) nil)
+        (t (cons (first l) (prefix (rest l) (- n 1))))))
 
 (check= (prefix '(1 2 3) 2) '(1 2))
 (check= (prefix '(1 2 3) 4) '(1 2 3))
+(check= (prefix '(a b c) 2) '(a b))
+(check= (prefix '(1 2 3) 0) '())
+(check= (prefix '() 3) '())
+(check= (prefix '() 0) '())
+(check= (prefix '(1 2 3 4 5 6) '4) '(1 2 3 4))
 
 ; position of x in l (counting from 0) if x occurs in l, (len l) otherwise
 (defunc pos (x l)
   :input-contract (listp l)
   :output-contract (natp (pos x l))
-  ...
-
-)
+  (cond ((endp l) 0)
+        ((equal (first l) x) 0)
+        (t (+ 1 (pos x (rest l))))))
 
 (check= (pos 'c *letterlist-values*) 2)
 (check= (pos '@ *letterlist-values*) (len *letterlist-values*))
+(check= (pos 2 '(1 2 3 4 5 6)) 1)
+(check= (pos 2 '()) 0)
+(check= (pos 9 '(1 2 3 4 5 6)) 6)
+(check= (pos nil '(t t t nil t)) 3)
 
 ; n raised to power e. We define 0^0 = 1
 (defunc power (n e)
   :input-contract (and (natp n) (natp e))
   :output-contract (natp (power n e))
-  ...
-
-)
+  (if (> e 0)
+    (* n (power n (- e 1)))
+    1))
 
 (check= (power 3 1) 3)
 (check= (power 3 3) 27)
+(check= (power 0 0) 1)
+(check= (power 2 0) 1)
+(check= (power 2 1) 2)
+(check= (power 2 2) 4)
+(check= (power 2 3) 8)
+(check= (power 1 1000) 1)
 
 ;; We will implement our encoding scheme in three steps: (i) functions to
 ;; encrypt "sentences" into boolean lists, (ii) functions to decrypt boolean
@@ -929,10 +943,13 @@ For example:
 ; and *letterlist-values*.
 
 (defunc symbol2dec (s)
-  :input-contract ...
-  :output-contract ...
-  ...)
+  :input-contract (symbolp s)
+  :output-contract (natp (symbol2dec s))
+  (pos s *letterlist-values*))
 
+(check= (symbol2dec 'a) 0)
+(check= (symbol2dec 'b) 1)
+(check= (symbol2dec 't) 19)
 (check= (symbol2dec 'z) 25)
 (check= (symbol2dec '@) 26)
 
@@ -949,25 +966,80 @@ For example:
 ; Hints: this function should be non-recursive and let* is your friend.
 
 (defunc dec2booleanlist (n)
-  :input-contract ...
-  :output-contract ...
-  ...
+  :input-contract (natp n)
+  :output-contract (booleanlistp (dec2booleanlist n))
+  (if (>= n 26)
+    nil
+    (let* ((pos-1 (>= n 16)) ;; 2^4 = 16
+           (pos-2 (if pos-1 (>= n 24) (>= n 8))) ;; 2^3 = 8
+           (pos-3 (if (and pos-1 (not pos-2)) 
+                    (>= n 20) 
+                    (if (and (not pos-1) pos-2)
+                      (>= n 12)
+                      (if (and (not pos-1) (not pos-2))
+                        (>= n 4)
+                        nil)))) ;; 2^2 = 4
+           (pos-4 (if (and pos-1 pos-2 (not pos-3))
+                    (>= n 26)
+                    (if (and (not pos-1) pos-2 pos-3)
+                      (>= n 14)
+                      (if (and pos-1 (not pos-2) pos-3)
+                        (>= n 22)
+                        (if (and pos-1 (not pos-2) (not pos-3))
+                          (>= n 18)
+                          (if (and (not pos-1) pos-2 (not pos-3))
+                            (>= n 10)
+                            (if (and (not pos-1) (not pos-2) pos-3)
+                              (>= n 6)
+                              (if (and (not pos-1) (not pos-2) (not pos-3))
+                                (>= n 2)
+                                nil))))))));; 2^1 = 2
+           (pos-5 (not (integerp (/ n 2))))) ;; 2^0 = 1
+      (list pos-1 pos-2 pos-3 pos-4 pos-5))))
 
-)
-
+(check= (dec2booleanlist 0) '(nil nil nil nil nil)) ; 0 = 00000
+(check= (dec2booleanlist 1) '(nil nil nil nil t)) ; 1 = 00001
+(check= (dec2booleanlist 2) '(nil nil nil t nil)) ; 2 = 00010
+(check= (dec2booleanlist 3) '(nil nil nil t t)) ; 3 = 00011
+(check= (dec2booleanlist 4) '(nil nil t nil nil)) ; 4 = 00100
+(check= (dec2booleanlist 5) '(nil nil t nil t)) ; 5 = 00101
+(check= (dec2booleanlist 6) '(nil nil t t nil)) ; 6 = 00110
+(check= (dec2booleanlist 7) '(nil nil t t t)) ; 7 = 00111
 (check= (dec2booleanlist  8) '(nil t nil nil nil)) ; 8 = 01000. Do not skip leading nil's (zeros)
-(check= (dec2booleanlist 32) nil)
+(check= (dec2booleanlist 9) '(nil t nil nil t)) ; 9 = 01001
+(check= (dec2booleanlist 10) '(nil t nil t nil)) ; 10 = 01010
+(check= (dec2booleanlist 11) '(nil t nil t t)) ; 11 = 01011
+(check= (dec2booleanlist 12) '(nil t t nil nil)) ; 12 = 01100
+(check= (dec2booleanlist 13) '(nil t t nil t)) ; 13 = 01101
+(check= (dec2booleanlist 14) '(nil t t t nil)) ; 14 = 01110
+(check= (dec2booleanlist 15) '(nil t t t t)) ; 15 = 01111
+(check= (dec2booleanlist 16) '(t nil nil nil nil)) ; 16 = 10000
 (check= (dec2booleanlist 17) '(t nil nil nil t))
+(check= (dec2booleanlist 18) '(t nil nil t nil)) ; 18 = 10010
+(check= (dec2booleanlist 19) '(t nil nil t t)) ; 19 = 10011
+(check= (dec2booleanlist 20) '(t nil t nil nil)) ; 20 = 10100
+(check= (dec2booleanlist 21) '(t nil t nil t)) ; 21 = 10101
+(check= (dec2booleanlist 22) '(t nil t t nil)) ; 22 = 10110
+(check= (dec2booleanlist 23) '(t nil t t t)) ; 23 = 10111
+(check= (dec2booleanlist 24) '(t t nil nil nil)) ; 24 = 11000
+(check= (dec2booleanlist 25) '(t t nil nil t)) ; 25 = 11001
+(check= (dec2booleanlist 32) nil)
+
 
 ; Function that converts a symbol s into a boolean list. First convert s
 ; into a decimal number, then convert that into boolean list. No
 ; recursion needed.
 (defunc symbol2booleanlist (s)
-  :input-contract ...
-  :output-contract ...
-  ...)
+  :input-contract (symbolp s)
+  :output-contract (booleanlistp (symbol2booleanlist s))
+  (dec2booleanlist (symbol2dec s)))
 
+(check= (symbol2booleanlist 'a) '(nil nil nil nil nil))
+(check= (symbol2booleanlist 'b) '(nil nil nil nil t))
 (check= (symbol2booleanlist 'f) '(nil nil t nil t))
+(check= (symbol2booleanlist 'i) '(nil t nil nil nil))
+(check= (symbol2booleanlist 'm) '(nil t t nil nil))
+(check= (symbol2booleanlist 't) '(t nil nil t t))
 (check= (symbol2booleanlist 'z) '(t t nil nil t))
 
 ; Function that converts a symbol list sl into a boolean list. See the
@@ -975,11 +1047,11 @@ For example:
 ; boolean lists obtained by converting the symbols in sl into boolean
 ; lists.
 (defunc symbollist2booleanlist (sl)
-  :input-contract ...
-  :output-contract ...
-  ...
-
-)
+  :input-contract (symbollistp sl)
+  :output-contract (booleanlistp (symbollist2booleanlist sl))
+  (cond ((endp sl) nil)
+        (t (append (symbol2booleanlist (first sl)) 
+                   (symbollist2booleanlist (rest sl))))))
 
 ; Notice that you must put spaces between symbols, but the number
 ; of spaces are irrelevant.
@@ -990,6 +1062,24 @@ For example:
           T NIL NIL T NIL ;s
           NIL NIL NIL NIL NIL ;a
           NIL T T NIL NIL)) ;m
+(check= (symbollist2booleanlist '())
+        '())
+(check= (symbollist2booleanlist '(a))
+        '(nil nil nil nil nil))
+(check= (symbollist2booleanlist '(a b c d e f))
+        '(nil nil nil nil nil
+              nil nil nil nil t
+              nil nil nil t nil
+              nil nil nil t t
+              nil nil t nil nil
+              nil nil t nil t))
+(check= (symbollist2booleanlist '(z t m i f))
+        '(t t nil nil t
+            t nil nil t t
+            nil t t nil nil
+            nil t nil nil nil
+            nil nil t nil t))
+
 
 ;;; Conversion from booleanlist to symbollist ;;;
 
@@ -997,13 +1087,17 @@ For example:
 ; t as 1 and the list as a number in binary representation. Output is the
 ; decimal value of the number. Hint: use power!
 (defunc booleanlist2dec (l)
-  :input-contract ...
-  :output-contract ...
-  ...
+  :input-contract (booleanlistp l)
+  :output-contract (natp (booleanlist2dec l))
+  (cond ((endp l) 0)
+        ((first l) (+ (power 2 (- (len l) 1)) (booleanlist2dec (rest l))))
+        (t (booleanlist2dec (rest l)))))
 
-)
-
+(check= (booleanlist2dec '()) 0)
+(check= (booleanlist2dec '(nil)) 0)
 (check= (booleanlist2dec '(t t nil t)) 13)
+(check= (booleanlist2dec '(t t t t)) 15)
+(check= (booleanlist2dec '(nil t t t t)) 15)
 (check= (booleanlist2dec '(t t nil t t nil t nil t)) 437)
 
 ; Function that takes a decimal number dec. If dec >= 26, return the
@@ -1012,24 +1106,35 @@ For example:
 
 ; Hint: use *letterlist-values* and nth.
 (defunc dec2symbol (dec)
-  :input-contract ...
-  :output-contract ...
-  ...
-
-)
+  :input-contract (natp dec)
+  :output-contract (symbolp (dec2symbol dec))
+  (if (> dec 25)
+    '-
+    (nth dec *letterlist-values*)))
 
 (check= (dec2symbol  0) 'a)
+(check= (dec2symbol 1) 'b)
 (check= (dec2symbol 10) 'k)
+(check= (dec2symbol 13) 'n)
+(check= (dec2symbol 21) 'v)
+(check= (dec2symbol 25) 'z)
+(check= (dec2symbol 26) '-)
 
 ; Function that converts a boolean list to a symbol. First convert the
 ; boolean list into a decimal number, then convert that into symbol via our
 ; ASCII code.
 (defunc booleanlist2symbol (l)
-  :input-contract ...
-  :output-contract ...
-  ...)
+  :input-contract (booleanlistp l)
+  :output-contract (symbolp (booleanlist2symbol l))
+  (dec2symbol (booleanlist2dec l)))
 
+(check= (booleanlist2symbol '()) 'a) ; 0 = a
+(check= (booleanlist2symbol '(nil)) 'a) ; 0 = a
 (check= (booleanlist2symbol '(nil t nil t nil)) 'k) ; 01010 (bin) = 10 (dec)
+(check= (booleanlist2symbol '(t t nil t)) 'n) ; 13 = n
+(check= (booleanlist2symbol '(t t t t)) 'p) ; 15 = p
+(check= (booleanlist2symbol '(nil t t t t)) 'p) ; 15 = p
+(check= (booleanlist2symbol '(t t nil t t nil t nil t)) '-) ; 427 = -
 
 ; Function that converts a boolean list into a symbol list. This function
 ; takes the first 5 booleans in the lists, interprets them as a binary
@@ -1041,14 +1146,35 @@ For example:
 ; Hint: use nthrest: (nthrest n l) applies rest to l n times, e.g.,
 ; (nthrest 0 '(1 2 3)) = (1 2 3) and (nthrest 2 '(1 2 3)) = (3)
 (defunc booleanlist2symbollist (l)
-  :input-contract ...
-  :output-contract ...
-  ...
+  :input-contract (booleanlistp l)
+  :output-contract (symbollistp (booleanlist2symbollist l))
+  (cond ((endp l) '())
+        (t (cons (booleanlist2symbol (prefix l 5))
+                 (booleanlist2symbollist (nthrest 5 l))))))
 
-)
-
+(check= (booleanlist2symbollist '()) '())
+(check= (booleanlist2symbollist '(nil)) '(a))
+(check= (booleanlist2symbollist '(nil nil nil nil nil ; a
+                                      nil t t nil t ; n
+                                      nil t nil t nil)) ; k
+        '(a n k))
+(check= (booleanlist2symbollist '(nil nil nil nil nil ; a
+                                      nil nil nil nil t ; b
+                                      nil t t nil t ; n
+                                      nil t t t t ; p
+                                      t t t t t ; -
+                                      nil t nil t nil)) ; k
+        '(a b n p - k))
+(check= (booleanlist2symbollist '(nil nil nil nil nil ; a
+                                      t t t t t ; -
+                                      nil t t nil t ; n
+                                      t nil nil nil nil ; q
+                                      t nil nil t nil ; s
+                                      nil t nil t nil)) ; k
+        '(a - n q s k))
 (check= (booleanlist2symbollist '(nil nil nil nil nil nil nil nil nil t nil
                       nil nil t nil)) '(a b c))
+
 
 ;;; Now the Encoding and Decoding ;;;
 
@@ -1062,36 +1188,86 @@ For example:
 ;; corresponding elements. If one of the lists has fewer elements than the
 ;; other, assume nil for the missing elements; see tests below
 (defunc bitwise-xor (l1 l2)
-  :input-contract ...
-  :output-contract ...
-  ...
+  :input-contract (and (booleanlistp l1) (booleanlistp l2))
+  :output-contract (booleanlistp (bitwise-xor l1 l2))
+  (cond ((and (endp l1) (endp l2))
+         nil)
+        ((endp l1)
+         (cons (xor nil (first l2)) (bitwise-xor l1 (rest l2))))
+        ((endp l2)
+         (cons (xor (first l1) nil) (bitwise-xor (rest l1) l2)))
+        (t
+         (cons (xor (first l1) (first l2)) (bitwise-xor (rest l1) (rest l2))))))
 
-)
-
+(check= (bitwise-xor '() '()) '())
+(check= (bitwise-xor '() '(t t nil)) '(t t nil))
+(check= (bitwise-xor '(t t nil) '()) '(t t nil))
+(check= (bitwise-xor '(t nil) '(nil t t)) '(t t t))
 (check= (bitwise-xor '(nil t t) '(t nil nil)) '(t t t))
 (check= (bitwise-xor '(nil t t) '(t nil))     '(t t t)) ; same as previous, by convention
+(check= (bitwise-xor '(t t t t t) '(t t t t)) '(nil nil nil nil t))
 
 ; Function to encrypt a message. A "message" is a list of symbols. Convert
 ; that list into a boolean list, then encrypt that against the secret key,
 ; using xor.
 (defunc encrypt (message)
-  :input-contract ...
-  :output-contract ...
-  ...)
+  :input-contract (symbollistp message)
+  :output-contract (booleanlistp (encrypt message))
+  (bitwise-xor (symbollist2booleanlist message) *key-values*))
 
 ; The result of this function depends on your choice of key. Show the
 ; output of this function on a few test cases.
+
+(check= (encrypt '(h e l l o t h e r e b o b))
+        '(t nil nil nil t t nil t nil t t t nil t
+            nil nil nil t t nil nil nil t nil t t t
+            nil nil nil nil t t t nil nil t nil nil
+            t nil t nil nil t t t t t nil t nil t
+            t t nil nil t nil nil nil nil nil nil t))
+(check= (encrypt '(t h e r e i s a b o m b))
+        '(nil nil t nil
+              t t nil t t nil t nil t nil t t t t nil
+              nil nil t t t t nil nil nil t t t t nil
+              t t nil t t nil t t t nil nil t t nil
+              t nil nil t t nil t nil nil t nil t t))
+(check= (encrypt '(j o e i s t h e m u r d e r e r))
+        '(t t t t t t t t t t t nil t nil t nil nil
+            t nil t t t nil nil t t t nil nil nil
+            nil t t t nil nil t nil nil t t nil t
+            nil nil nil t t t nil nil nil t t t nil
+            t nil nil t nil nil t nil nil t nil nil
+            nil t nil nil t nil nil t nil nil nil t))
 
 ; Function that decrypts an encrypted message. An "encrypted message" is a
 ; boolean list. xor that list bitwise against the secret key, and convert
 ; the result into a list of symbols.
 (defunc decrypt (cryptic-message)
-  :input-contract ...
-  :output-contract ...
-  ...)
+  :input-contract (booleanlistp cryptic-message)
+  :output-contract (symbollistp (decrypt cryptic-message))
+  (booleanlist2symbollist (bitwise-xor cryptic-message *key-values*)))
 
 ; The result of this function depends on your choice of key. Show the
 ; output of this function on a few test cases.
+
+(check= (decrypt '(t nil nil nil t t nil t nil t t t nil t
+                     nil nil nil t t nil nil nil t nil t t t
+                     nil nil nil nil t t t nil nil t nil nil
+                     t nil t nil nil t t t t t nil t nil t
+                     t t nil nil t nil nil nil nil nil nil t))
+        '(h e l l o t h e r e b o b))
+(check= (decrypt  '(t t t t t t t t t t t nil t nil t nil nil
+                      t nil t t t nil nil t t t nil nil nil
+                      nil t t t nil nil t nil nil t t nil t
+                      nil nil nil t t t nil nil nil t t t nil
+                      t nil nil t nil nil t nil nil t nil nil
+                      nil t nil nil t nil nil t nil nil nil t))
+        '(j o e i s t h e m u r d e r e r))
+(check= (decrypt '(nil nil t nil
+                       t t nil t t nil t nil t nil t t t t nil
+                       nil nil t t t t nil nil nil t t t t nil
+                       t t nil t t nil t t t nil nil t t nil
+                       t nil nil t t nil t nil nil t nil t t))
+        '(t h e r e i s a b o m b))
 
 ; Now test whether encryption followed by decryption reproduces the
 ; original message. The following test will pass with the key defined
@@ -1109,7 +1285,7 @@ For example:
 ; example in the test below (note: we check= against nil, not against t):
 
 (check=
- (let ((m '(...)))
+ (let ((m '(h)))
    (equal (decrypt (encrypt m))
           m))
  nil)
@@ -1118,11 +1294,9 @@ For example:
 ; than just the info that it failed). Replace the two ... with the SAME
 ; string. This check= may fail, thus it is placed in comments.
 
-#|
+
 
 (acl2::without-evisc
  (check=
-  (decrypt (encrypt '(...)))
-  '(...)))
-
-|#
+  (decrypt (encrypt '(h)))
+  '(h)))#|ACL2s-ToDo-Line|#
