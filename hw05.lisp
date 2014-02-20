@@ -520,7 +520,7 @@ The Beginner level is the next level after Bare Bones level.
 
 CS 2800 Homework 5 - Spring 2014
 
-Student names: PUT BOTH NAMES HERE
+Student names: Brian Desnoyers and Phaelyn Kotuby
 
 Technical instructions:
 
@@ -608,7 +608,7 @@ class.
 
 {/\,=>}
 
-~a cannot be expresses using {/\,=>}
+~a cannot be expressed using {/\,=>}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -700,6 +700,8 @@ K = Arthur is King
 ((~S \/ K) /\ K) => S
 = {absorbtion}
 K => S
+T    F
+  F
 
 NOT VALID
 
@@ -733,14 +735,37 @@ H = being happy
 ((R <> H) /\ (R => H)) => (~R /\ H)
 = {implies rule}
 ((R <> H) /\ (~R \/ H)) => (~R /\ H)
+= {(A <> B) = (A /\ ~B) \/ (~A \/ B)}
+(((R /\ ~H) \/ (~R \/ H)) /\ (~R \/ H)) => (~R /\ H)
+={absorption}
+(~R \/ H) => (~R /\ H)
+  F    T       F    T
+     T            F
+           F     
 
+ NOT VALID
+ 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 Computers are smart, or humans are dumb. If humans are not dumb, they beat
 the Martians in the solar race. The humans did not beat the Martians in the
 solar race. Therefore, computers are smart.
 
-...
+C = computers are smart
+H = humans are dumb
+R = humans beat the martians in the solar race
+
+((C \/ H) /\ (~H => R) /\ ~R) => C
+= {implies rule}
+((C \/ H) /\ (H \/ R) /\ ~R) => C
+= {absorption}
+((C \/ H) /\ H) => C
+= {absorption}
+H => C
+T    F
+  F
+  
+NOT VALID
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -748,7 +773,19 @@ If Natasha is a spy, then exactly one of following holds: Natasha works for
 USA or Natasha works for USSR. Natasha is a spy. Therefore, Natasha works
 for USSR and Natasha works for USA.
 
-...
+S = Natasha is a spy
+U = Natasha works for USA
+R = Natahsa works for USSR
+
+((S => (U <> R)) /\ S) => (R /\ U)
+  T     T    F      T      F    T
+  T        T        T         F
+    T               T         F
+             T                F
+                        F
+                        
+NOT VALID
+
 
 |#
 
@@ -1299,4 +1336,4 @@ For example:
 (acl2::without-evisc
  (check=
   (decrypt (encrypt '(h)))
-  '(h)))#|ACL2s-ToDo-Line|#
+  '(h)))
