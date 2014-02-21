@@ -608,13 +608,30 @@ class.
 
 {/\,=>}
 
-~a cannot be expressed using {/\,=>}
+We know that {~, /\} is a c.B.b.
+That is, we show that:
+
+~ can be expresses using only {/\, =>}
+   ~a = (a => F)
+
+/\ can be expressed using only {/\, =>}
+   (a /\ b) = (a /\ b)
+   
+Therefore {/\, =>} is a c.B.b.
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 {\/,<>}
 
-...
+We know that {\/, ~} is a c.B.b.
+That is, we show that:
+
+~ can be expressed using only {\/, <>}
+   ~a = (a <> T)
+
+\/ can be expressed using only {\/, <>}
+   (a \/ b) = (a \/ b)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -624,7 +641,28 @@ where % is a new binary connective called *projection* and defined as
 
 a % b = a.
 
-...
+{%} is NOT complete.
+
+Well show that ~ cannot be expressed using %.
+
+Assume h is the smallest formula over variable a using no connective other
+than % such that h(a) = ~a.
+1) Case: h has no connectives at all
+         h(a) = T     h(a) = F     h(a) = a [CONTRADICTION]
+         
+2) Case: h has at least one ocurance of %:
+         h(a) = h1(a) % h2(a)
+         
++---+------+-------+-------+
+| a | h(a) | h1(a) | h2(a) |
++---+------+-------+-------+
+| T | F    | F*    | N/A   |
+| F | T    | T*    | N/A   |
++---+------+-------+-------+
+
+* Contradiction: Can't be the values for h1(a) because then h1(a) would be
+                 negation and h would not be the smallest formula.
+         
 
 |#
 
@@ -639,7 +677,30 @@ and into Disjunctive Normal Form (DNF).
 
 (x1 = y1) /\ (x2 = y2) /\ (x3 = y3)
 
-...
+(x1 = y1) /\ (x2 = y2) /\ (x3 = y3)
+
+to CNF: 
+{(p = q) = ((p /\ q) \/ (~p /\ ~q))}
+ ((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
+                              /\ ((x3 /\ y3) \/ (~x3 /\ ~y3))  
+= {deMorgan's}
+ (~(~x1 \/ ~y1) \/ ~(x1 \/ y1)) /\ (~(~x2 \/ ~y2) \/ ~(x2 \/ y2))
+                                /\ (~(~x3 \/ ~y3) \/ ~(x3 \/ y3))
+                                
+to DNF:
+{(p = q) = ((p /\ q) \/ (~p /\ ~q))}
+ ((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
+                              /\ ((x3 /\ y3) \/ (~x3 /\ ~y3)) 
+= {deMorgan's}
+~(((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
+                               /\ ((x3 /\ y3) \/ (~x3 /\ ~y3)))
+                               
+(~((x1 /\ y1) \/ (~x1 /\ ~y1)) \/ ~((x2 /\ y2) \/ (~x2 /\ ~y2))  
+                               \/ ~((x3 /\ y3) \/ (~x3 /\ ~y3)))
+                               
+*** CHECK -- is it this instead? ***                               
+((~(x1 /\ y1) /\ ~(~x1 /\ ~y1)) \/ (~(x2 /\ y2) /\ ~(~x2 /\ ~y2))
+                                \/ (~(x3 /\ y3) /\ ~(~x3 /\ ~y3)))
 
 What can you say about the sizes of the two normal forms, compared to the
 given formula? Make a statement for a "parameterized" formula, that is one
@@ -647,7 +708,11 @@ where the number of conjuncts in the input is a parameter n, as follows:
 
 (x1 = y1) /\ (x2 = y2) /\ ... /\ (xn = yn)
 
-...
+The normal forms are longer than the given formula in this case. This is 
+because connectives other than ~, /\, and \/ are simply shorthand for longer 
+forms involving those three; normal forms expand this shorthand. 
+
+??? how much bigger ???
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -664,14 +729,20 @@ Examples:
     If so, how? If not, given an example of a formula that has no
     equivalent NNF representation.
 
-...
+    Yes, every formula can be converted into NNF. We know that every
+    formula has a CNF/DNF equivalent, so to convert to NNF, we simply
+    have to apply DeMorgan's law as many times as possible to distribute
+    the negations onto variables instead of expressions. 
 
 (b) Given a formula g over only the connectives /\ , \/ , ~ , such as both
     formulas shown as examples above. Suppose g has an equivalent NNF.
     Compare the sizes of g and the smallest possible NNF equivalent to g.
     What can we say in general?
 
-...
+    ???
+    NNF will always be the same size or larger than g for the same reason as
+    before -- most connectives are shorthand for combinations of ~, /\, and \/,
+    so writing a formula only with those three will make it longer.
 
 |#
 
@@ -805,19 +876,37 @@ Formalize the puzzle as a satisfiability problem, and solve it, as follows.
 
 (a) Define propositional variables to represent relevant atomic facts.
 
-...
+a = box 1 has the money
+b = box 2 has the money
+c = box 3 has the money
+x = box 1 is telling the truth
+y = box 2 is telling the truth
+z = box 3 is telling the truth
+
 
 (b) Using these variables, formulate the knowledge given in the problem as
 propositional formulas; be careful with the statement that exactly one
 label tells the truth.
 
-...
+(a <> b <> c) /\ ~(a /\ b /\ c)
+x => ~a
+y => ~b
+z => b
+(x <> y <> z) /\ ~(x /\ y /\ z)
 
 (c) Show that the formula you have found in (b) is satisfiable. State where
 the money is, and which label tells the truth, according to the satisfying
 assignment. You may use simplifications, or truth tables.
 
-...
+(a <> b <> c) /\ ~(a /\ b /\ c) /\ (x => ~a) /\ (y => ~b) /\ (z => b) /\ (x <> y <> z) /\ ~(x /\ y /\ z)
+F     T    F       F    T    F      T    ~F      F    ~T      F    T      T    F    F       T    F    F
+   T       F         F       F      T     T      F     F      F    T         T      F          F      F
+        T                 ~F           T            T            T               T                 ~F
+                                                  T
+                                                  
+Formula is satisfiable when a = F, b = T, c = F, x = T, y = F, z = F
+                       when Box 2 has the money and  only box 1 is telling the truth
+
 
 (d) Suppose we now want to find out whether the solution you found in (c)
 is unique. How do we do that? The idea is to check whether the formula is
