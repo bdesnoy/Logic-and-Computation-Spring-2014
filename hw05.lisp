@@ -677,30 +677,21 @@ and into Disjunctive Normal Form (DNF).
 
 (x1 = y1) /\ (x2 = y2) /\ (x3 = y3)
 
-(x1 = y1) /\ (x2 = y2) /\ (x3 = y3)
+to CNF:
+= {(a = b) = ((~a \/ b) /\ (a \/ ~b))}
+(~x1 \/ y1) /\ (x1 \/ ~y1) /\ (~x2 \/ y2) /\ (x2 \/ ~y2) /\ (~x3 \/ y3) /\ (x3 \/ ~y3)
 
-to CNF: 
-{(p = q) = ((p /\ q) \/ (~p /\ ~q))}
- ((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
-                              /\ ((x3 /\ y3) \/ (~x3 /\ ~y3))  
-= {deMorgan's}
- (~(~x1 \/ ~y1) \/ ~(x1 \/ y1)) /\ (~(~x2 \/ ~y2) \/ ~(x2 \/ y2))
-                                /\ (~(~x3 \/ ~y3) \/ ~(x3 \/ y3))
                                 
 to DNF:
-{(p = q) = ((p /\ q) \/ (~p /\ ~q))}
- ((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
-                              /\ ((x3 /\ y3) \/ (~x3 /\ ~y3)) 
-= {deMorgan's}
-~(((x1 /\ y1) \/ (~x1 /\ ~y1)) /\ ((x2 /\ y2) \/ (~x2 /\ ~y2))  
-                               /\ ((x3 /\ y3) \/ (~x3 /\ ~y3)))
-                               
-(~((x1 /\ y1) \/ (~x1 /\ ~y1)) \/ ~((x2 /\ y2) \/ (~x2 /\ ~y2))  
-                               \/ ~((x3 /\ y3) \/ (~x3 /\ ~y3)))
-                               
-*** CHECK -- is it this instead? ***                               
-((~(x1 /\ y1) /\ ~(~x1 /\ ~y1)) \/ (~(x2 /\ y2) /\ ~(~x2 /\ ~y2))
-                                \/ (~(x3 /\ y3) /\ ~(~x3 /\ ~y3)))
+(x1 /\ y1 /\ x2 /\ y2 /\ x3 /\ y3) \/       (none are false)
+(~x1 /\ ~y1 /\ x2 /\ y2 /\ x3 /\ y3) \/     (only 1's are false)
+(x1 /\ y1 /\ ~x2 /\ ~y2 /\ x3 /\ y3) \/     (only 2's are false)
+(x1 /\ y1 /\ x2 /\ y2 /\ ~x3 /\ ~y3) \/     (only 3's are false)
+(~x1 /\ ~y1 /\ ~x2 /\ ~y2 /\ x3 /\ y3) \/   (1's and 2's are false)
+(x1 /\ y1 /\ ~x2 /\ ~y2 /\ ~x3 /\ ~y3) \/   (2's and 3's are false)
+(~x1 /\ ~y1 /\ x2 /\ y2 /\ ~x3 /\ ~y3) \/   (1's and 3's are false)
+(~x1 /\ ~y1 /\ ~x2 /\ ~y2 /\ ~x3 /\ ~y3)    (all are false)
+  
 
 What can you say about the sizes of the two normal forms, compared to the
 given formula? Make a statement for a "parameterized" formula, that is one
@@ -708,11 +699,7 @@ where the number of conjuncts in the input is a parameter n, as follows:
 
 (x1 = y1) /\ (x2 = y2) /\ ... /\ (xn = yn)
 
-The normal forms are longer than the given formula in this case. This is 
-because connectives other than ~, /\, and \/ are simply shorthand for longer 
-forms involving those three; normal forms expand this shorthand. 
-
-??? how much bigger ???
+The number of terms of CNF is (2 * n) and the number of terms for DNF is 2^n.
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -739,10 +726,11 @@ Examples:
     Compare the sizes of g and the smallest possible NNF equivalent to g.
     What can we say in general?
 
-    ???
-    NNF will always be the same size or larger than g for the same reason as
-    before -- most connectives are shorthand for combinations of ~, /\, and \/,
-    so writing a formula only with those three will make it longer.
+    NNF will always be the same size or larger than g. If g is already in
+    NNF, the formula will be of the same size. If deMorgan's Law needs to
+    be applied, the formula's size will increase.
+    
+    
 
 |#
 
@@ -800,21 +788,20 @@ VALID
 Being rich is not the same thing as being happy. However, if I'm rich, I am
 also happy. Therefore, I am not rich but happy.
 
-R = being rick
+R = being rich
 H = being happy
 
 ((R <> H) /\ (R => H)) => (~R /\ H)
 = {implies rule}
 ((R <> H) /\ (~R \/ H)) => (~R /\ H)
-= {(A <> B) = (A /\ ~B) \/ (~A \/ B)}
-(((R /\ ~H) \/ (~R \/ H)) /\ (~R \/ H)) => (~R /\ H)
+= {(A <> B) = (A /\ ~B) \/ (~A /\ B)}
+(((R /\ ~H) \/ (~R \/ H)) /\ (~R /\ H)) => (~R /\ H)
 ={absorption}
-(~R \/ H) => (~R /\ H)
-  F    T       F    T
-     T            F
-           F     
-
- NOT VALID
+(~R /\ H) => (~R /\ H)
+={(a => a) = T}
+T
+           
+VALID
  
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -904,9 +891,9 @@ F     T    F       F    T    F      T    ~F      F    ~T      F    T      T    F
         T                 ~F           T            T            T               T                 ~F
                                                   T
                                                   
-Formula is satisfiable when a = F, b = T, c = F, x = T, y = F, z = F
-                       when Box 2 has the money and  only box 1 is telling the truth
-
+Formula is satisfiable
+Evaluates to true      when a = F, b = T, c = F, x = T, y = F, z = F
+                       when Box 2 has the money and only box 1 is telling the truth
 
 (d) Suppose we now want to find out whether the solution you found in (c)
 is unique. How do we do that? The idea is to check whether the formula is
@@ -928,7 +915,22 @@ satisfying solution, if one exists. Describe, in one sentence, how these
 ideas can be used to find ALL satisfying solutions to any given Boolean
 formula.
 
-...
+(a <> b <> c) /\ ~(a /\ b /\ c) /\ (x => ~a) /\ (y => ~b) /\ (z => b) /\ (x <> y <> z) /\ ~(x /\ y /\ z)
+F     F    T       F    F    T      F    ~F      T    ~F      F    F      F    T    F       F    T    F
+   F       T         F       T      F     T      T     T      F    F        T       F          F      F
+        T                ~F            T            T           T               T                 ~F
+                                                   T
+                                                   
+T /\ ~(~a /\ b /\ ~c /\ x /\ ~y /\ ~z)
+       ~F    F    ~T    F    ~T    ~F
+        T    F     F    F     F     T
+T /\ ~F
+T
+
+Formula is satisfiable
+Evaluates to true      when a = F, b = F, c = T, x = F, y = T, z = F
+                       when Box 3 has the money and only box 2 is telling the truth
+
 
 |#
 
